@@ -56,6 +56,39 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 	############################
 	# YOUR IMPLEMENTATION HERE #
 
+	prev_value_function = np.zeros(nS)
+
+	for s in range(nS): #To give the goal a value of 1
+		for a in range(nA):
+			for oc in range(len(P[s][a])):
+				if (P[s][a][oc][2] != 0):
+					value_function[P[s][a][oc][1]] += P[s][a][oc][2] * P[s][a][oc][0]
+					prev_value_function[P[s][a][oc][1]] += P[s][a][oc][2] * P[s][a][oc][0]
+					value_function[P[s][a][oc][1]] /= value_function[P[s][a][oc][1]]
+					prev_value_function[P[s][a][oc][1]] /= prev_value_function[P[s][a][oc][1]]
+					
+	reset_val_func = np.copy(value_function)
+	end = False #To stop the loop
+	time = 0 #Loop Counter
+
+	while (not end):
+		value_function = np.copy(reset_val_func)
+		for s in range(nS):
+			for oc in range(len(P[s][policy[s]])):
+				check = 0
+				for a in range(nA): #Check if the currect state is terminating
+					if (len(P[s][a]) == 1):
+						check += 1
+				if (check != 4): #Only update the value if the current state is F or S
+					#print(prev_value_function[P[s][policy[s]][oc][1]],P[s][policy[s]][oc][0])
+					value_function[s] += gamma * prev_value_function[P[s][policy[s]][oc][1]] * P[s][policy[s]][oc][0]
+		end = True
+		time = time + 1
+		for s in range(nS):
+			if (abs(prev_value_function[s] - value_function[s]) > tol):
+				end = False
+		prev_value_function = np.copy(value_function)
+	#print(time)
 
 	############################
 	return value_function
@@ -85,6 +118,25 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
+	for s in range(nS):
+		max_val = 0
+		max_a = 0
+		pol_val = 0
+		pol_a = policy[s]
+		for env_push in range(len(P[s][pol_a])):
+			pol_val += P[s][pol_a][env_push][0] * value_from_policy[P[s][pol_a][env_push][1]]
+		for a in range(nA):
+			points_a = 0
+			for env_push in range(len(P[s][a])):
+				points_a += P[s][a][env_push][0] * value_from_policy[P[s][a][env_push][1]]
+			#print(s, a, points_a)
+			if (max_val < points_a):
+				max_val = points_a
+				max_a = a
+			#print(s, a, points_a, max_val, max_a)
+		#print(pol_a,pol_val)
+		if (max_val >= pol_val):
+			new_policy[s] = max_a
 
 
 	############################
@@ -114,7 +166,17 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
-
+	end = False
+	while (not end):
+		value_function = policy_evaluation(P, nS, nA, policy)
+		new_policy = np.copy(policy_improvement(P, nS, nA, value_function, policy))
+		check = 0
+		for s in range(nS):
+			if ((check == 0) and (policy[s] - new_policy[s]) != 0):
+				check = 1
+		if (check == 0):
+			end = True
+		policy = np.copy(new_policy)
 
 	############################
 	return value_function, policy
