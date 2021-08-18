@@ -197,7 +197,36 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
 	policy = np.zeros(nS, dtype=int)
 	############################
 	# YOUR IMPLEMENTATION HERE #
-
+	time = 0
+	end = False
+	for s in range(nS):
+		for a in range(nA):
+			for oc in range(len(P[s][a])):
+				if (P[s][a][oc][2] != 0):
+					value_function[P[s][a][oc][1]] += P[s][a][oc][2] * P[s][a][oc][0]
+					value_function[P[s][a][oc][1]] /= value_function[P[s][a][oc][1]]
+	reward_function = np.copy(value_function)
+	prev_value_function = np.copy(value_function)
+	while (not end):
+		for s in range(nS):
+			max_a_val = 0
+			if (not (P[s][0][0][3] and P[s][1][0][3] and P[s][2][0][3] and P[s][3][0][3])):
+				for a in range(nA):
+					points = reward_function[s]
+					for oc in range(len(P[s][a])):
+						points += gamma * P[s][a][oc][0] * prev_value_function[P[s][a][oc][1]]
+					if (max_a_val < points):
+						policy[s] = a
+						max_a_val = points
+				value_function[s] = max_a_val
+		time = time + 1
+		check = 0
+		for s in range(nS):
+			if (abs(prev_value_function[s]-value_function[s]) > tol):
+				check = 1
+		if (check == 0):
+			end = True
+		prev_value_function = np.copy(value_function)
 
 	############################
 	return value_function, policy
@@ -239,16 +268,17 @@ def render_single(env, policy, max_steps=100):
 if __name__ == "__main__":
 
 	# comment/uncomment these lines to switch between deterministic/stochastic environments
-	env = gym.make("Deterministic-8x8-FrozenLake-v0")
-	#env = gym.make("Stochastic-4x4-FrozenLake-v0")
+	#env = gym.make("Deterministic-4x4-FrozenLake-v0")
+	env = gym.make("Stochastic-4x4-FrozenLake-v0")
+	for i in range(20):
+		print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
 
-	print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
+		V_pi, p_pi = policy_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+		#print(p_pi,"\n", V_pi)
+		render_single(env, p_pi, 100)
 
-	V_pi, p_pi = policy_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
-	print(p_pi, V_pi)
-	render_single(env, p_pi, 100)
+	print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
 
-	#print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
-
-	#V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
-	#render_single(env, p_vi, 100)
+	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+	#print(V_vi, p_vi)
+	render_single(env, p_vi, 100)
