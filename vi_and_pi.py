@@ -55,10 +55,9 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 
 	############################
 	# YOUR IMPLEMENTATION HERE #
-
 	prev_value_function = np.zeros(nS)
 
-	for s in range(nS): #To give the goal a value of 1
+	for s in range(nS):
 		for a in range(nA):
 			for oc in range(len(P[s][a])):
 				if (P[s][a][oc][2] != 0):
@@ -66,24 +65,20 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 					prev_value_function[P[s][a][oc][1]] += P[s][a][oc][2] * P[s][a][oc][0]
 					value_function[P[s][a][oc][1]] /= value_function[P[s][a][oc][1]]
 					prev_value_function[P[s][a][oc][1]] /= prev_value_function[P[s][a][oc][1]]
-					
 	reset_val_func = np.copy(value_function)
-	end = False #To stop the loop
-	time = 0 #Loop Counter
+	end = False
+	time = 0
 
 	while (not end):
 		value_function = np.copy(reset_val_func)
 		for s in range(nS):
-			for oc in range(len(P[s][policy[s]])):
-				check = 0
-				for a in range(nA): #Check if the currect state is terminating
-					if (len(P[s][a]) == 1):
-						check += 1
-				if (check != 4): #Only update the value if the current state is F or S
+			if (not (P[s][0][0][3] and P[s][1][0][3] and P[s][2][0][3] and P[s][3][0][3])):
+				for oc in range(len(P[s][policy[s]])):
 					#print(prev_value_function[P[s][policy[s]][oc][1]],P[s][policy[s]][oc][0])
 					value_function[s] += gamma * prev_value_function[P[s][policy[s]][oc][1]] * P[s][policy[s]][oc][0]
 		end = True
 		time = time + 1
+		#print(prev_value_function[s] - value_function[s])
 		for s in range(nS):
 			if (abs(prev_value_function[s] - value_function[s]) > tol):
 				end = False
@@ -137,7 +132,6 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 		#print(pol_a,pol_val)
 		if (max_val >= pol_val):
 			new_policy[s] = max_a
-
 
 	############################
 	return new_policy
@@ -245,17 +239,16 @@ def render_single(env, policy, max_steps=100):
 if __name__ == "__main__":
 
 	# comment/uncomment these lines to switch between deterministic/stochastic environments
-	env = gym.make("Deterministic-4x4-FrozenLake-v0")
-	# env = gym.make("Stochastic-4x4-FrozenLake-v0")
+	env = gym.make("Deterministic-8x8-FrozenLake-v0")
+	#env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
 	print("\n" + "-"*25 + "\nBeginning Policy Iteration\n" + "-"*25)
 
 	V_pi, p_pi = policy_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+	print(p_pi, V_pi)
 	render_single(env, p_pi, 100)
 
-	print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
+	#print("\n" + "-"*25 + "\nBeginning Value Iteration\n" + "-"*25)
 
-	V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
-	render_single(env, p_vi, 100)
-
-
+	#V_vi, p_vi = value_iteration(env.P, env.nS, env.nA, gamma=0.9, tol=1e-3)
+	#render_single(env, p_vi, 100)
